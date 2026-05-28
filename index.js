@@ -15,9 +15,35 @@ app.get('/', (req, res) => {
 // ambil data comments
 app.get('/comments', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM comment ORDER BY id DESC');
+    let { page, limit } = req.query;
 
-    res.json(result.rows);
+    // default value
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+
+    const offset = (page - 1) * limit;
+
+    // ambil data
+    const result = await pool.query(
+      'SELECT * FROM comment ORDER BY id DESC LIMIT $1 OFFSET $2',
+      [limit, offset]
+    );
+
+    // total data
+    const countResult = await pool.query('SELECT COUNT(*) FROM comment');
+
+    const total = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      }
+    });
   } catch (err) {
     res.status(500).json({
       error: err.message
