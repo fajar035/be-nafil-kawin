@@ -31,7 +31,7 @@ app.post('/comments', async (req, res) => {
     const { name, comment, available } = req.body;
 
     const result = await pool.query(
-      `INSERT INTO comments (name, comment, available)
+      `INSERT INTO comment (name, comment, available)
        VALUES ($1, $2, $3)
        RETURNING *`,
       [name, comment, available]
