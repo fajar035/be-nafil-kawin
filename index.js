@@ -17,22 +17,32 @@ app.get('/comments', async (req, res) => {
   try {
     let { page, limit } = req.query;
 
-    // default value
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
 
     const offset = (page - 1) * limit;
 
-    // ambil data
     const result = await pool.query(
-      'SELECT * FROM comment ORDER BY id DESC LIMIT $1 OFFSET $2',
+      `
+      SELECT 
+        id,
+        name,
+        comment,
+        available::int AS available
+      FROM comment
+      ORDER BY id DESC
+      LIMIT $1 OFFSET $2
+      `,
       [limit, offset]
     );
 
-    // total data
-    const countResult = await pool.query('SELECT COUNT(*) FROM comment');
+    const countResult = await pool.query(`  SELECT 
+    COUNT(*) AS total,
+    COUNT(*) FILTER (WHERE available = B'1') AS available,
+    COUNT(*) FILTER (WHERE available = B'0') AS unavailable
+  FROM comment`);
 
-    const total = parseInt(countResult.rows[0].count);
+    const total = parseInt(countResult.rows[0].total);
     const totalPages = Math.ceil(total / limit);
 
     if (result.rows.length === 0) {
@@ -45,7 +55,9 @@ app.get('/comments', async (req, res) => {
       data: result.rows,
       pagination: {
         total,
-        totalPages
+        totalPages,
+        available: parseInt(countResult.rows[0].available),
+        unavailable: parseInt(countResult.rows[0].unavailable)
       }
     });
   } catch (err) {
