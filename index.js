@@ -35,11 +35,15 @@ app.get('/comments', async (req, res) => {
     const total = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(total / limit);
 
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: 'No comments found'
+      });
+    }
+
     res.json({
       data: result.rows,
       pagination: {
-        page,
-        limit,
         total,
         totalPages
       }
