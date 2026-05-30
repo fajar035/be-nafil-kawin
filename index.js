@@ -13,11 +13,9 @@ app.use(
       'http://localhost:5173', // local dev
       'https://fe-nafil-kawin.vercel.app' // ganti dengan domain FE vercel kamu
     ],
-    methods: ['GET', 'POST', 'OPTIONS']
+    methods: ['GET', 'POST']
   })
 );
-
-app.options('*', cors());
 
 app.use(express.json());
 
