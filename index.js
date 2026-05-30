@@ -6,6 +6,16 @@ const app = express();
 const host = process.env.HOST;
 const PORT = process.env.PORT;
 
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173', // local dev
+      'https://fe-nafil-kawin.vercel.app' // ganti dengan domain FE vercel kamu
+    ],
+    methods: ['GET', 'POST']
+  })
+);
+
 app.use(express.json());
 
 app.get('/', (req, res) => {
