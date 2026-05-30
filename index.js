@@ -42,7 +42,7 @@ app.get('/comments', async (req, res) => {
         available::int AS available,
         created_at
       FROM comment
-      ORDER BY created_at ASC
+      ORDER BY created_at DESC
       LIMIT $1 OFFSET $2
       `,
       [limit, offset]
