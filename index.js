@@ -11,7 +11,7 @@ app.use(
   cors({
     origin: [
       'http://localhost:5173', // local dev
-      'https://fe-nafil-kawin.vercel.app' // ganti dengan domain FE vercel kamu
+      'https://ayu-nafil.vercel.app' // ganti dengan domain FE vercel kamu
     ],
     methods: ['GET', 'POST']
   })
