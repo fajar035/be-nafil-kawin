@@ -28,32 +28,31 @@ app.get('/comments', async (req, res) => {
         id,
         name,
         comment,
-        available::int AS available
+        available::int AS available,
+        created_at
       FROM comment
-      ORDER BY id DESC
+      ORDER BY created_at DESC
       LIMIT $1 OFFSET $2
       `,
       [limit, offset]
     );
 
-    const countResult = await pool.query(`  SELECT 
-    COUNT(*) AS total,
-    COUNT(*) FILTER (WHERE available = B'1') AS available,
-    COUNT(*) FILTER (WHERE available = B'0') AS unavailable
-  FROM comment`);
+    const countResult = await pool.query(`
+      SELECT 
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE available = B'1') AS available,
+        COUNT(*) FILTER (WHERE available = B'0') AS unavailable
+      FROM comment
+    `);
 
     const total = parseInt(countResult.rows[0].total);
     const totalPages = Math.ceil(total / limit);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: 'No comments found'
-      });
-    }
-
     res.json({
       data: result.rows,
       pagination: {
+        page,
+        limit,
         total,
         totalPages,
         available: parseInt(countResult.rows[0].available),
@@ -61,9 +60,8 @@ app.get('/comments', async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({
-      error: err.message
-    });
+    console.error('GET /comments error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -72,21 +70,37 @@ app.post('/comments', async (req, res) => {
   try {
     const { name, comment, available } = req.body;
 
+    // validasi field wajib
+    if (!name || !comment || available === undefined) {
+      return res.status(400).json({
+        error: 'Field name, comment, dan available wajib diisi'
+      });
+    }
+
+    // normalisasi available → bit(1)
+    // terima: true/false, 1/0, "1"/"0", "hadir"/"tidak hadir"
+    const availableBit =
+      available === true ||
+      available === 1 ||
+      available === '1' ||
+      available === 'hadir'
+        ? '1'
+        : '0';
+
     const result = await pool.query(
       `INSERT INTO comment (name, comment, available)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [name, comment, available]
+       VALUES ($1, $2, $3::bit(1))
+       RETURNING id, name, comment, available::int AS available, created_at`,
+      [name.trim(), comment.trim(), availableBit]
     );
 
-    res.json(result.rows[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({
-      error: err.message
-    });
+    console.error('POST /comments error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(PORT, (req, res) => {
-  console.log(`Server running at ${host}${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server running at ${host}:${PORT}`);
 });
